@@ -10,7 +10,7 @@
 #define PIN_LDR 15      
 #define PIN_RELAY 2     
 
-#define GerarCSV true
+#define GerarCSV false
 
 DHT dht(PIN_DHT, DHTTYPE);
 
@@ -21,6 +21,8 @@ float umidadeSimulada = 0.0;
 bool estadoN = false;
 bool estadoP = false;
 bool estadoK = false;
+
+bool bombaLigada = false;
 
 void setup() {
   Serial.begin(115200);
@@ -46,17 +48,17 @@ void loop() {
   valorLDR = analogRead(PIN_LDR); 
   phSimulado = map(valorLDR, 0, 4095, 0, 14);
 
-  if (estadoN) phSimulado += 3.0;
-  if (estadoP) phSimulado += 1.5;
-  if (estadoK) phSimulado -= 10.5;
+  if (estadoN) phSimulado += 5.0;
+  if (estadoP) phSimulado += 3.5;
+  if (estadoK) phSimulado -= 2.5;
   phSimulado = constrain(phSimulado, 0, 14);
 
-  bool bombaLigada = false;
   if (umidadeSimulada < 60.0) {
     digitalWrite(PIN_RELAY, LOW);  
     bombaLigada = true;
   } else if (umidadeSimulada >= 80.0) {
     digitalWrite(PIN_RELAY, HIGH); 
+    bombaLigada = false;
   }
 
   if (bombaLigada) {
@@ -83,7 +85,7 @@ void loop() {
     Serial.print(",");
     Serial.println(bombaLigada);
 
-    delay(100);
+    delay(10);
   } else {
     Serial.print("Botões: N=");
     Serial.print(estadoN);
