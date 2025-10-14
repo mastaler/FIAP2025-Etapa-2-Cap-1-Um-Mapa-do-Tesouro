@@ -7,10 +7,10 @@
 #define PIN_DHT 13
 #define DHTTYPE DHT22
 
-#define PIN_LDR 15      
-#define PIN_RELAY 2     
+#define PIN_LDR 15
+#define PIN_RELAY 2
 
-#define GerarCSV false
+#define GerarCSV true
 
 DHT dht(PIN_DHT, DHTTYPE);
 
@@ -21,8 +21,9 @@ float umidadeSimulada = 0.0;
 bool estadoN = false;
 bool estadoP = false;
 bool estadoK = false;
-
 bool bombaLigada = false;
+
+bool vaiChover = false; 
 
 void setup() {
   Serial.begin(115200);
@@ -34,18 +35,34 @@ void setup() {
   dht.begin();
 
   umidadeSimulada = dht.readHumidity();
-  if (GerarCSV)
-  {
-    Serial.println("tempo,umidadeSimulada,phSimulado,estadoN,estadoP,estadoK,bomba");
+
+  if (GerarCSV) {
+    Serial.println("tempo,umidadeSimulada,phSimulado,estadoN,estadoP,estadoK,bomba,vaiChover");
   }
+
+  Serial.println("Digite 'S' para indicar que vai chover ou 'N' para indicar que não vai chover:");
 }
 
 void loop() {
-  estadoN = digitalRead(PIN_BTN_N) == LOW; 
+  // Leitura de entrada do usuário via Serial
+  if (Serial.available() > 0) {
+    char entrada = Serial.read();
+    entrada = toupper(entrada);
+    if (entrada == 'S') {
+      vaiChover = true;
+      Serial.println("Previsão de chuva detectada!");
+    } else if (entrada == 'N') {
+      vaiChover = false;
+      Serial.println("Sem previsão de chuva.");
+    }
+  }
+
+  // Leitura dos botões e sensores
+  estadoN = digitalRead(PIN_BTN_N) == LOW;
   estadoP = digitalRead(PIN_BTN_P) == LOW;
   estadoK = digitalRead(PIN_BTN_K) == LOW;
 
-  valorLDR = analogRead(PIN_LDR); 
+  valorLDR = analogRead(PIN_LDR);
   phSimulado = map(valorLDR, 0, 4095, 0, 14);
 
   if (estadoN) phSimulado += 5.0;
@@ -53,14 +70,20 @@ void loop() {
   if (estadoK) phSimulado -= 2.5;
   phSimulado = constrain(phSimulado, 0, 14);
 
-  if (umidadeSimulada < 60.0) {
-    digitalWrite(PIN_RELAY, LOW);  
+  // Define limites dinâmicos de irrigação conforme previsão
+  float limiteInferior = vaiChover ? 40.0 : 60.0;
+  float limiteSuperior = vaiChover ? 60.0 : 80.0;
+
+  // Controle de irrigação com base nos limites
+  if (umidadeSimulada < limiteInferior) {
+    digitalWrite(PIN_RELAY, LOW);
     bombaLigada = true;
-  } else if (umidadeSimulada >= 80.0) {
-    digitalWrite(PIN_RELAY, HIGH); 
+  } else if (umidadeSimulada >= limiteSuperior) {
+    digitalWrite(PIN_RELAY, HIGH);
     bombaLigada = false;
   }
 
+  // Simulação da variação de umidade
   if (bombaLigada) {
     umidadeSimulada += 5.0;
   } else {
@@ -69,8 +92,8 @@ void loop() {
 
   umidadeSimulada = constrain(umidadeSimulada, 0, 100);
 
-  if (GerarCSV)
-  {
+  // Saída de dados
+  if (GerarCSV) {
     Serial.print(millis() / 1000);
     Serial.print(",");
     Serial.print(umidadeSimulada, 2);
@@ -83,8 +106,9 @@ void loop() {
     Serial.print(",");
     Serial.print(estadoK);
     Serial.print(",");
-    Serial.println(bombaLigada);
-
+    Serial.print(bombaLigada);
+    Serial.print(",");
+    Serial.println(vaiChover);
     delay(10);
   } else {
     Serial.print("Botões: N=");
@@ -97,18 +121,24 @@ void loop() {
     Serial.print("pH simulado: ");
     Serial.println(phSimulado);
     if (phSimulado < 6.0 || phSimulado > 6.8) {
-      Serial.println("ALERTA: pH fora do intervalo ideal para tomate!");
+      Serial.println("⚠️ ALERTA: pH fora do intervalo ideal para tomate!");
     }
 
     Serial.print("Umidade simulada: ");
     Serial.println(umidadeSimulada);
 
+    Serial.print("Previsão de chuva: ");
+    Serial.println(vaiChover ? "SIM" : "NÃO");
+
+    Serial.print("Limite inferior (ligar bomba): ");
+    Serial.println(limiteInferior);
+    Serial.print("Limite superior (desligar bomba): ");
+    Serial.println(limiteSuperior);
+
     Serial.print("Bomba: ");
     Serial.println(bombaLigada ? "LIGADA" : "DESLIGADA");
 
     Serial.println("--------------------------");
-
-    delay(2000); 
+    delay(2000);
   }
-  
 }
