@@ -1,5 +1,13 @@
 # 🌱 Sistema de Monitoramento e Irrigação Inteligente (FarmTech)
 
+## 👥 Integrantes
+
+- Paulo Martelli  
+- Lucas Cariello Massena  
+- Wanderlei Grizolli Junior  
+- Fabio Mastaler  
+- Raul Mauro Sarai de Jesus
+
 ## Introdução
 A *FarmTech Solutions* continua seu desenvolvimento na Agricultura Digital, avançando para a **Fase 2** do projeto de gestão agrícola.  
 Nesta etapa, o objetivo é **construir e simular um dispositivo eletrônico capaz de coletar dados em uma fazenda**, aplicando conceitos de IoT, automação e análise de dados.
